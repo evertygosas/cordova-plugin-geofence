@@ -98,6 +98,10 @@ window.geofence.addOrUpdate({
         openAppOnClick: Boolean,//is main app activity should be opened after clicking on notification
         vibration:      [Integer], //Optional vibration pattern - see description
         data:           Object  //Custom object associated with notification
+    },
+    webhook: {              // Webhook object
+        url:            String, // URL of the POST webhook to call on each transition
+        authorization:  String  // Content of the Authorization header to send
     }
 }).then(function () {
     console.log('Geofence successfully added');
