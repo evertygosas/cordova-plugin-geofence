@@ -5,12 +5,24 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+import android.os.AsyncTask;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingEvent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.io.IOException;
+
 
 public class ReceiveTransitionsIntentService extends IntentService {
     protected static final String GeofenceTransitionIntent = "com.cowbell.cordova.geofence.TRANSITION";
@@ -69,8 +81,13 @@ public class ReceiveTransitionsIntentService extends IntentService {
                             .getGeoNotification(fenceId);
 
                     if (geoNotification != null) {
+                        // Notification
                         if (geoNotification.notification != null) {
                             notifier.notify(geoNotification.notification);
+                        }
+                        // Server track
+                        if (geoNotification.webhook != null) {
+                            new NotifyServerAsyncTask().execute(geoNotification, new Integer(transitionType));
                         }
                         geoNotification.transitionType = transitionType;
                         geoNotifications.add(geoNotification);
@@ -88,5 +105,42 @@ public class ReceiveTransitionsIntentService extends IntentService {
             }
         }
         sendBroadcast(broadcastIntent);
+    }
+
+    protected void notifyServer(GeoNotification geo, Integer transition) {
+        Logger logger = Logger.getLogger();
+
+        HttpClient httpclient = new DefaultHttpClient();
+      	HttpPost httppost = new HttpPost(geo.webhook.getUrl());
+        logger.log(Log.DEBUG, "GEOSERVER Sending server track to : " + geo.webhook.getUrl());
+      	try {
+            List nameValuePairs = new ArrayList();
+            // Geofence transition informations
+            nameValuePairs.add(new BasicNameValuePair("id", geo.id));
+            nameValuePairs.add(new BasicNameValuePair("action", (transition == Geofence.GEOFENCE_TRANSITION_ENTER) ? "enter" : "exit"));
+            nameValuePairs.add(new BasicNameValuePair("timestamp", String.valueOf(System.currentTimeMillis())));
+            httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+            // Authorization header
+            if (geo.webhook.getAuth() != null) {
+              httppost.setHeader("Authorization", geo.webhook.getAuth());
+            }
+            // send the variable and value, in other words post, to the URL
+      		  HttpResponse response = httpclient.execute(httppost);
+      	} catch (ClientProtocolException e) {
+            logger.log(Log.ERROR, "Error sending track. ClientProtocol Error");
+      		  // process execption
+      	} catch (IOException e) {
+      		  // process execption
+      		  logger.log(Log.ERROR, "Error sending track. IOException");
+      	}
+    }
+
+
+    private class NotifyServerAsyncTask extends AsyncTask<Object, Integer, Double>{
+        @Override
+        protected Double doInBackground(Object... params) {
+            notifyServer((GeoNotification)params[0], (Integer)params[1]);
+            return null;
+        }
     }
 }
