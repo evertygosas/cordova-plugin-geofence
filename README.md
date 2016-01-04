@@ -120,6 +120,22 @@ Geofence overrides the previously one with the same `id`.
 
 Notification overrides the previously one with the same `notification.id`.
 
+## Webhooks
+
+You can set a webhook object parameter to make the plugin automatically make a POST on the specified webhook URL when a transition occurs.
+The POST data will look like this :
+```javascript
+{
+  id:          String,  // The unique identifier of geofence
+  action:      String,  // The transition : one of 'enter' or 'exit'
+  timestamp:   Number   // The UTC timestamp that the transition was recorded.
+}
+```
+
+###Platform quirks
+
+Fully working only on Android and iOS.
+
 ## Notification vibrations
 
 You can set vibration pattern for the notification or disable default vibrations.
