@@ -179,11 +179,19 @@ class GeofenceFaker {
                         let id = geo["id"].stringValue
                         dispatch_async(dispatch_get_main_queue()) {
                             if let region = self.geoNotificationManager.getMonitoredRegion(id) {
-                                log("FAKER Trigger didEnterRegion")
-                                self.geoNotificationManager.locationManager(
-                                    self.geoNotificationManager.locationManager,
-                                    didEnterRegion: region
-                                )
+                                if (arc4random_uniform(2) == 0) {
+                                    log("FAKER Trigger didEnterRegion")
+                                    self.geoNotificationManager.locationManager(
+                                        self.geoNotificationManager.locationManager,
+                                        didEnterRegion: region
+                                    )
+                                } else {
+                                    log("FAKER Trigger didExitRegion")
+                                    self.geoNotificationManager.locationManager(
+                                        self.geoNotificationManager.locationManager,
+                                        didExitRegion: region
+                                    )
+                                }
                             }
                         }
                     }
@@ -401,7 +409,9 @@ class GeoNotificationManager : NSObject, CLLocationManagerDelegate {
         request.HTTPMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("application/json", forHTTPHeaderField: "Accept")
-        request.addValue(geo["webhook"]["authorization"].string!, forHTTPHeaderField: "Authorization")
+        if geo["webhook"]["authorization"].isExists() {
+            request.addValue(geo["webhook"]["authorization"].string!, forHTTPHeaderField: "Authorization")
+        }
         
         let params = [
             "id": geo["id"].string!,
