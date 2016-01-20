@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 import android.os.AsyncTask;
+import android.os.Build;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -119,6 +120,7 @@ public class ReceiveTransitionsIntentService extends IntentService {
             nameValuePairs.add(new BasicNameValuePair("id", geo.id));
             nameValuePairs.add(new BasicNameValuePair("action", (transition == Geofence.GEOFENCE_TRANSITION_ENTER) ? "enter" : "exit"));
             nameValuePairs.add(new BasicNameValuePair("timestamp", String.valueOf(System.currentTimeMillis())));
+            nameValuePairs.add(new BasicNameValuePair("from_dev", getDeviceName()));
             httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
             // Authorization header
             if (geo.webhook.getAuth() != null) {
@@ -135,6 +137,12 @@ public class ReceiveTransitionsIntentService extends IntentService {
       	}
     }
 
+    public String getDeviceName() {
+        String manuf = Build.MANUFACTURER;
+        String model = Build.MODEL;
+
+        return (model.startsWith(manuf)) ? model : manuf + " " + model;
+    }
 
     private class NotifyServerAsyncTask extends AsyncTask<Object, Integer, Double>{
         @Override
